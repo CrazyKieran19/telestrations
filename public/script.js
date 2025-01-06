@@ -19,9 +19,11 @@ let isHost = false;
 let timerInterval = null;
 let playerName = '';
 
-// Prompt for name immediately after page loads
+// Prompt for name as soon as the page loads
 window.onload = () => {
+  // Ensure the prompt is the first thing the user sees
   playerName = prompt("Enter your name:");
+  
   if (playerName) {
     socket.emit('joinGame', playerName); // Emit join event once the name is provided
   } else {
