@@ -18,9 +18,11 @@ let isGameStarted = false;
 let isHost = false;
 let timerInterval = null;
 
-// Join the game
+// Prompt for name immediately after page loads
 const playerName = prompt("Enter your name:");
-socket.emit('joinGame', playerName);
+if (playerName) {
+  socket.emit('joinGame', playerName); // Emit join event once the name is provided
+}
 
 // Update player list
 socket.on('updatePlayers', (players) => {
