@@ -9,22 +9,31 @@
 <body>
   <div id="game-container">
     <h1>Telestrations Game</h1>
+
+    <!-- Player Info -->
     <div id="game-info">
       <div id="player-list"></div>
+      <button id="start-button" style="display:block; margin: 20px auto;">Start Game</button>
     </div>
 
-    <div id="drawing-board" style="display: none;">
-      <canvas id="canvas" width="800" height="400"></canvas>
-      <button id="submit-drawing">Submit Drawing</button>
+    <!-- Current Turn Display -->
+    <p id="current-turn" style="font-size: 18px; margin-top: 20px;">Waiting for the game to start...</p>
+
+    <!-- Timer -->
+    <p id="timer" style="font-size: 20px; font-weight: bold;"></p>
+
+    <!-- Drawing Board -->
+    <div id="drawing-board" style="display:none; margin-top: 20px;">
+      <canvas id="canvas" width="500" height="400" style="border: 1px solid black;"></canvas>
+      <button id="submit-button" style="margin-top: 10px;">Submit Drawing</button>
     </div>
 
-    <div id="game-result" style="display: none;">
-      <p>Game Over</p>
+    <!-- Guess Input -->
+    <div id="guess-input" style="display:none; margin-top: 20px;">
+      <p id="prompt-display" style="margin-bottom: 10px; font-size: 16px;">Guess this:</p>
+      <input type="text" id="guess-input-field" placeholder="Enter your guess" style="padding: 10px; width: 80%;">
+      <button id="submit-button" style="margin-top: 10px;">Submit Guess</button>
     </div>
-  </div>
-
-  <div id="start-container">
-    <button id="start-button" style="display: none;">Start Game</button>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
