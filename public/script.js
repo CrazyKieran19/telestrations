@@ -17,12 +17,17 @@ const wordSubmitButton = document.getElementById('word-submit-button');
 let isGameStarted = false;
 let isHost = false;
 let timerInterval = null;
+let playerName = '';
 
 // Prompt for name immediately after page loads
-const playerName = prompt("Enter your name:");
-if (playerName) {
-  socket.emit('joinGame', playerName); // Emit join event once the name is provided
-}
+window.onload = () => {
+  playerName = prompt("Enter your name:");
+  if (playerName) {
+    socket.emit('joinGame', playerName); // Emit join event once the name is provided
+  } else {
+    alert("You need to enter a name to play!");
+  }
+};
 
 // Update player list
 socket.on('updatePlayers', (players) => {
@@ -53,7 +58,7 @@ socket.on('gameHost', () => {
 wordSubmitButton.addEventListener('click', () => {
   const word = wordInputField.value.trim();
   if (word) {
-    socket.emit('submit', { playerId: socket.id, content: word });
+    socket.emit('submitWord', { playerId: socket.id, word: word });
     wordInputContainer.style.display = 'none';
     drawingBoard.style.display = 'block';
   } else {
@@ -87,7 +92,7 @@ canvas.addEventListener('mouseup', () => {
 // Submit the drawing
 document.getElementById('submit-button').addEventListener('click', () => {
   const drawing = canvas.toDataURL(); // Capture the drawing as an image
-  socket.emit('submit', { playerId: socket.id, content: drawing });
+  socket.emit('submitDrawing', { playerId: socket.id, drawing: drawing });
   overlay.style.display = 'block'; // Show the "submitted" overlay
 });
 
