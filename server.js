@@ -12,6 +12,7 @@ let gameState = {
   isGameStarted: false,
   submissions: {}, // Tracks submissions (drawings or guesses) per player per round
   timerDuration: 60, // 1-minute timer
+  finalPresentation: [], // Stores game progression for presentation
 };
 
 app.use(express.static('public')); // Serve frontend assets
@@ -24,7 +25,7 @@ io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);
 
   socket.on('joinGame', (playerName) => {
-    if (gameState.players.length < 8 && !gameState.isGameStarted) {
+    if (!gameState.isGameStarted) {
       gameState.players.push({ id: socket.id, name: playerName });
       gameState.submissions[socket.id] = []; // Initialize empty submission list
       io.emit('updatePlayers', gameState.players); // Broadcast player list
@@ -34,7 +35,9 @@ io.on('connection', (socket) => {
   });
 
   socket.on('startGame', () => {
-    if (gameState.players.length >= 3) {
+    if (gameState.players.length < 3) {
+      io.to(socket.id).emit('notEnoughPlayers');
+    } else {
       gameState.isGameStarted = true;
       gameState.currentRound = 1;
       io.emit('gameStarted', { timerDuration: gameState.timerDuration });
@@ -59,16 +62,14 @@ function startTimer() {
   setTimeout(() => {
     if (gameState.currentRound > gameState.players.length) {
       // Game over
-      io.emit('gameOver', gameState.submissions);
-      gameState.isGameStarted = false;
+      finalizeGame();
     } else {
-      // Pass submissions to the next player
       passToNextPlayer();
       io.emit('newRound', {
         round: gameState.currentRound,
         timerDuration: gameState.timerDuration,
       });
-      startTimer(); // Start next round
+      startTimer();
     }
   }, gameState.timerDuration * 1000);
 }
@@ -94,6 +95,16 @@ function checkIfAllSubmitted() {
     clearTimeout(startTimer);
     startTimer(); // Immediately proceed to the next round
   }
+}
+
+function finalizeGame() {
+  gameState.finalPresentation = gameState.players.map(player => ({
+    player: player.name,
+    submissions: gameState.submissions[player.id],
+  }));
+
+  io.emit('gameOver', gameState.finalPresentation);
+  gameState.isGameStarted = false;
 }
 
 server.listen(process.env.PORT || 3000, () => {
