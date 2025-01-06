@@ -10,10 +10,10 @@ let gameState = {
   players: [],
   drawings: [],
   currentRound: 0,
-  isGameStarted: false
+  isGameStarted: false,
 };
 
-app.use(express.static('public'));  // Serve frontend assets
+app.use(express.static('public')); // Serve frontend assets
 
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/index.html');
@@ -25,8 +25,8 @@ io.on('connection', (socket) => {
   socket.on('joinGame', (playerName) => {
     if (gameState.players.length < 8 && !gameState.isGameStarted) {
       gameState.players.push({ id: socket.id, name: playerName });
-      socket.emit('gameState', gameState);  // Send current game state to the new player
-      io.emit('updatePlayers', gameState.players);  // Broadcast player list
+      socket.emit('gameState', gameState); // Send current game state to the new player
+      io.emit('updatePlayers', gameState.players); // Broadcast player list
     } else {
       socket.emit('gameFull');
     }
@@ -36,7 +36,9 @@ io.on('connection', (socket) => {
     if (gameState.players.length >= 3) {
       gameState.isGameStarted = true;
       gameState.currentRound = 1;
-      io.emit('gameStarted', gameState);
+      io.emit('gameStarted', gameState); // Notify all players that the game has started
+    } else {
+      socket.emit('notEnoughPlayers', "At least 3 players are required to start the game.");
     }
   });
 
