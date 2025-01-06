@@ -8,13 +8,10 @@ const io = socketIo(server);
 
 let gameState = {
   players: [],
-  hostId: null, // The socket ID of the host
-  turnQueue: [],
-  currentTurn: 0,
+  currentRound: 0,
   isGameStarted: false,
+  submissions: {}, // Tracks submissions (drawings or guesses) per player per round
   timerDuration: 60, // 1-minute timer
-  currentTask: 'draw', // Task can be 'draw' or 'guess'
-  currentPrompt: '', // Store the current guess or drawing
 };
 
 app.use(express.static('public')); // Serve frontend assets
@@ -28,55 +25,75 @@ io.on('connection', (socket) => {
 
   socket.on('joinGame', (playerName) => {
     if (gameState.players.length < 8 && !gameState.isGameStarted) {
-      const isHost = gameState.players.length === 0; // First player becomes the host
       gameState.players.push({ id: socket.id, name: playerName });
-      if (isHost) gameState.hostId = socket.id; // Set the host ID
-
-      socket.emit('playerRole', { isHost }); // Inform the player of their role
-      io.emit('updatePlayers', gameState.players); // Update the player list for everyone
+      gameState.submissions[socket.id] = []; // Initialize empty submission list
+      io.emit('updatePlayers', gameState.players); // Broadcast player list
     } else {
       socket.emit('gameFull');
     }
   });
 
   socket.on('startGame', () => {
-    if (socket.id === gameState.hostId && gameState.players.length >= 3) {
+    if (gameState.players.length >= 3) {
       gameState.isGameStarted = true;
-      gameState.turnQueue = [...gameState.players]; // Create the turn order
-      startTurn();
+      gameState.currentRound = 1;
+      io.emit('gameStarted', { timerDuration: gameState.timerDuration });
+      startTimer();
     }
+  });
+
+  socket.on('submit', ({ playerId, content }) => {
+    gameState.submissions[playerId].push(content); // Save drawing or guess
+    checkIfAllSubmitted();
   });
 
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
-
-    // Remove player from the game state
     gameState.players = gameState.players.filter(player => player.id !== socket.id);
-    gameState.turnQueue = gameState.turnQueue.filter(player => player.id !== socket.id);
-
-    // If the host disconnects, assign a new host
-    if (socket.id === gameState.hostId && gameState.players.length > 0) {
-      gameState.hostId = gameState.players[0].id;
-      io.to(gameState.hostId).emit('playerRole', { isHost: true });
-    }
-
+    delete gameState.submissions[socket.id];
     io.emit('updatePlayers', gameState.players);
   });
-
-  // Other game logic omitted for brevity...
 });
 
-// Function to start the turn of the current player
-function startTurn() {
-  const currentPlayer = gameState.turnQueue[gameState.currentTurn];
-  io.to(currentPlayer.id).emit('yourTurn', {
-    task: gameState.currentTask,
-    prompt: gameState.currentPrompt,
-    timer: gameState.timerDuration,
+function startTimer() {
+  setTimeout(() => {
+    if (gameState.currentRound > gameState.players.length) {
+      // Game over
+      io.emit('gameOver', gameState.submissions);
+      gameState.isGameStarted = false;
+    } else {
+      // Pass submissions to the next player
+      passToNextPlayer();
+      io.emit('newRound', {
+        round: gameState.currentRound,
+        timerDuration: gameState.timerDuration,
+      });
+      startTimer(); // Start next round
+    }
+  }, gameState.timerDuration * 1000);
+}
+
+function passToNextPlayer() {
+  const rotatedSubmissions = {};
+  const playerIds = gameState.players.map(player => player.id);
+
+  playerIds.forEach((id, index) => {
+    const nextIndex = (index + 1) % playerIds.length;
+    rotatedSubmissions[playerIds[nextIndex]] = gameState.submissions[id];
   });
 
-  // Notify all players about the current turn
-  io.emit('currentTurn', currentPlayer.name);
+  gameState.submissions = rotatedSubmissions;
+  gameState.currentRound++;
+}
+
+function checkIfAllSubmitted() {
+  const allSubmitted = gameState.players.every(player => 
+    gameState.submissions[player.id].length >= gameState.currentRound
+  );
+  if (allSubmitted) {
+    clearTimeout(startTimer);
+    startTimer(); // Immediately proceed to the next round
+  }
 }
 
 server.listen(process.env.PORT || 3000, () => {
