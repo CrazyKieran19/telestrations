@@ -7,8 +7,19 @@ const currentTurnDisplay = document.getElementById('current-turn');
 const drawingBoard = document.getElementById('drawing-board');
 const guessInput = document.getElementById('guess-input');
 const timerDisplay = document.getElementById('timer');
+const overlay = document.getElementById('overlay');
+const finalPresentation = document.getElementById('final-presentation');
+const wordInputContainer = document.getElementById('word-input-container');
+const wordInputField = document.getElementById('word-input-field');
+const wordSubmitButton = document.getElementById('word-submit-button');
 
 let isGameStarted = false;
+let isHost = false;
+
+// Canvas setup
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let isDrawing = false;
 
 // Join the game
 const playerName = prompt("Enter your name:");
@@ -28,22 +39,49 @@ startButton.addEventListener('click', () => {
 socket.on('gameStarted', ({ timerDuration }) => {
   isGameStarted = true;
   startButton.style.display = 'none';
-  drawingBoard.style.display = 'block';
+  wordInputContainer.style.display = 'block';
   startTimer(timerDuration);
 });
 
-// New round
-socket.on('newRound', ({ round, timerDuration }) => {
-  if (round % 2 === 1) {
+// Not enough players popup
+socket.on('notEnoughPlayers', () => {
+  alert('You need at least 3 players to start the game.');
+});
+
+// Submit initial word
+wordSubmitButton.addEventListener('click', () => {
+  const word = wordInputField.value.trim();
+  if (word) {
+    socket.emit('submit', { playerId: socket.id, content: word });
+    wordInputContainer.style.display = 'none';
     drawingBoard.style.display = 'block';
-    guessInput.style.display = 'none';
-    currentTurnDisplay.innerText = `Round ${round}: Draw something!`;
   } else {
-    drawingBoard.style.display = 'none';
-    guessInput.style.display = 'block';
-    currentTurnDisplay.innerText = `Round ${round}: Guess what this is!`;
+    alert('Please enter a word.');
   }
-  startTimer(timerDuration);
+});
+
+// Drawing logic
+canvas.addEventListener('mousedown', (e) => {
+  isDrawing = true;
+  ctx.beginPath();
+  ctx.moveTo(e.offsetX, e.offsetY);
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  if (isDrawing) {
+    ctx.lineTo(e.offsetX, e.offsetY);
+    ctx.stroke();
+  }
+});
+
+canvas.addEventListener('mouseup', () => {
+  isDrawing = false;
+});
+
+document.getElementById('submit-button').addEventListener('click', () => {
+  const drawing = canvas.toDataURL();
+  socket.emit('submit', { playerId: socket.id, content: drawing });
+  overlay.style.display = 'block';
 });
 
 // Timer functionality
@@ -57,18 +95,19 @@ function startTimer(duration) {
 
     if (timeLeft <= 0) {
       clearInterval(timer);
-      socket.emit('submit', {
-        playerId: socket.id,
-        content: drawingBoard.style.display === 'block' 
-          ? captureDrawing() 
-          : document.getElementById('guess-input-field').value,
-      });
     }
   }, 1000);
 }
 
-// Capture drawing
-function captureDrawing() {
-  const canvas = document.getElementById('canvas');
-  return canvas.toDataURL(); // Capture as base64 image
-}
+// Game over presentation
+socket.on('gameOver', (finalData) => {
+  finalPresentation.style.display = 'block';
+  finalData.forEach((entry) => {
+    const div = document.createElement('div');
+    div.innerHTML = `
+      <h3>${entry.player}</h3>
+      ${entry.submissions.map(sub => `<p>${sub}</p>`).join('')}
+    `;
+    finalPresentation.appendChild(div);
+  });
+});
