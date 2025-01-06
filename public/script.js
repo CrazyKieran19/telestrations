@@ -8,17 +8,11 @@ const drawingBoard = document.getElementById('drawing-board');
 const guessInput = document.getElementById('guess-input');
 const timerDisplay = document.getElementById('timer');
 
-let isHost = false; // Track if the current player is the host
+let isGameStarted = false;
 
 // Join the game
 const playerName = prompt("Enter your name:");
 socket.emit('joinGame', playerName);
-
-// Receive player role (host or not)
-socket.on('playerRole', ({ isHost: host }) => {
-  isHost = host;
-  startButton.style.display = isHost ? 'block' : 'none'; // Show the start button only for the host
-});
 
 // Update player list
 socket.on('updatePlayers', (players) => {
@@ -27,12 +21,54 @@ socket.on('updatePlayers', (players) => {
 
 // Handle game start
 startButton.addEventListener('click', () => {
-  if (isHost) socket.emit('startGame');
+  socket.emit('startGame');
 });
 
-// Display current player's turn
-socket.on('currentTurn', (playerName) => {
-  currentTurnDisplay.innerText = `It's ${playerName}'s turn.`;
+// Game started
+socket.on('gameStarted', ({ timerDuration }) => {
+  isGameStarted = true;
+  startButton.style.display = 'none';
+  drawingBoard.style.display = 'block';
+  startTimer(timerDuration);
 });
 
-// Timer functionality and other game logic omitted for brevity...
+// New round
+socket.on('newRound', ({ round, timerDuration }) => {
+  if (round % 2 === 1) {
+    drawingBoard.style.display = 'block';
+    guessInput.style.display = 'none';
+    currentTurnDisplay.innerText = `Round ${round}: Draw something!`;
+  } else {
+    drawingBoard.style.display = 'none';
+    guessInput.style.display = 'block';
+    currentTurnDisplay.innerText = `Round ${round}: Guess what this is!`;
+  }
+  startTimer(timerDuration);
+});
+
+// Timer functionality
+function startTimer(duration) {
+  let timeLeft = duration;
+  timerDisplay.innerText = `Time left: ${timeLeft}s`;
+
+  const timer = setInterval(() => {
+    timeLeft--;
+    timerDisplay.innerText = `Time left: ${timeLeft}s`;
+
+    if (timeLeft <= 0) {
+      clearInterval(timer);
+      socket.emit('submit', {
+        playerId: socket.id,
+        content: drawingBoard.style.display === 'block' 
+          ? captureDrawing() 
+          : document.getElementById('guess-input-field').value,
+      });
+    }
+  }, 1000);
+}
+
+// Capture drawing
+function captureDrawing() {
+  const canvas = document.getElementById('canvas');
+  return canvas.toDataURL(); // Capture as base64 image
+}
