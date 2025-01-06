@@ -4,87 +4,66 @@ const socket = io();
 const startButton = document.getElementById('start-button');
 const playerList = document.getElementById('player-list');
 const drawingBoard = document.getElementById('drawing-board');
+const guessInput = document.getElementById('guess-input');
+const submitButton = document.getElementById('submit-button');
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
-const submitButton = document.getElementById('submit-drawing');
+const timerDisplay = document.getElementById('timer');
 
-// Player name prompt
+let isMyTurn = false;
+let currentTask = '';
+
+// Join the game
 const playerName = prompt("Enter your name:");
 socket.emit('joinGame', playerName);
 
-// Variables to store state
-let players = [];
-let isHost = false;
-
-// Update the game state when received
-socket.on('gameState', (state) => {
-  if (!state.isGameStarted) {
-    if (state.players[0]?.id === socket.id) {
-      isHost = true;
-      startButton.style.display = 'block'; // Show Start Game button for the host
-    } else {
-      startButton.style.display = 'none';
-    }
-  }
-});
-
-// Update player list in real time
-socket.on('updatePlayers', (newPlayers) => {
-  players = newPlayers;
+// Update player list
+socket.on('updatePlayers', (players) => {
   playerList.innerHTML = 'Players: ' + players.map(player => player.name).join(', ');
 });
 
-// Notify if the game is full
-socket.on('gameFull', () => {
-  alert("Game is full. Try again later.");
+// Show current player's turn
+socket.on('currentTurn', (playerName) => {
+  document.getElementById('current-turn').innerText = `It's ${playerName}'s turn.`;
 });
 
-// Handle the start of the game
-socket.on('gameStarted', () => {
-  startButton.style.display = 'none'; // Hide Start Game button
-  drawingBoard.style.display = 'block'; // Show drawing board
-  alert("Game started! Start drawing.");
+// Your turn to play
+socket.on('yourTurn', ({ task, prompt, timer }) => {
+  isMyTurn = true;
+  currentTask = task;
+  if (task === 'draw') {
+    drawingBoard.style.display = 'block';
+    guessInput.style.display = 'none';
+  } else if (task === 'guess') {
+    drawingBoard.style.display = 'none';
+    guessInput.style.display = 'block';
+    document.getElementById('prompt-display').innerText = `Guess this: ${prompt}`;
+  }
+
+  // Start timer
+  let timeLeft = timer;
+  const interval = setInterval(() => {
+    timerDisplay.innerText = `Time left: ${timeLeft}s`;
+    if (--timeLeft <= 0) {
+      clearInterval(interval);
+    }
+  }, 1000);
 });
 
-// Notify if there aren’t enough players
-socket.on('notEnoughPlayers', (message) => {
+// Submit drawing
+submitButton.addEventListener('click', () => {
+  if (currentTask === 'draw') {
+    const drawing = canvas.toDataURL();
+    socket.emit('submitDrawing', drawing);
+  } else if (currentTask === 'guess') {
+    const guess = document.getElementById('guess-input').value;
+    socket.emit('submitGuess', guess);
+  }
+  isMyTurn = false;
+});
+
+// Game Over
+socket.on('gameOver', (message) => {
   alert(message);
-});
-
-// Start Game button click handler
-startButton.addEventListener('click', () => {
-  if (isHost) {
-    socket.emit('startGame'); // Notify the server to start the game
-  }
-});
-
-// Submit drawing button click handler
-submitButton.addEventListener('click', () => {
-  const drawing = canvas.toDataURL(); // Capture the canvas drawing as an image
-  socket.emit('sendDrawing', drawing);
-});
-
-// Drawing on the canvas
-let isDrawing = false;
-
-canvas.addEventListener('mousedown', (e) => {
-  isDrawing = true;
-  ctx.beginPath();
-  ctx.moveTo(e.offsetX, e.offsetY);
-});
-
-canvas.addEventListener('mousemove', (e) => {
-  if (isDrawing) {
-    ctx.lineTo(e.offsetX, e.offsetY);
-    ctx.stroke();
-  }
-});
-
-canvas.addEventListener('mouseup', () => {
-  isDrawing = false;
-});
-
-// Clear canvas after drawing
-submitButton.addEventListener('click', () => {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  location.reload(); // Reload the page to reset the game
 });
