@@ -19,9 +19,11 @@ let isHost = false;
 // Update the game state when received
 socket.on('gameState', (state) => {
   if (!state.isGameStarted) {
-    if (state.players[0].id === socket.id) {
+    if (state.players[0]?.id === socket.id) {
       isHost = true;
       startButton.style.display = 'block'; // Show Start Game button for the host
+    } else {
+      startButton.style.display = 'none';
     }
   }
 });
@@ -41,6 +43,7 @@ socket.on('gameFull', () => {
 socket.on('gameStarted', () => {
   startButton.style.display = 'none'; // Hide Start Game button
   drawingBoard.style.display = 'block'; // Show drawing board
+  alert("Game started! Start drawing.");
 });
 
 // Notify if there aren’t enough players
@@ -50,7 +53,9 @@ socket.on('notEnoughPlayers', (message) => {
 
 // Start Game button click handler
 startButton.addEventListener('click', () => {
-  socket.emit('startGame');
+  if (isHost) {
+    socket.emit('startGame'); // Notify the server to start the game
+  }
 });
 
 // Submit drawing button click handler
