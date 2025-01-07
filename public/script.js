@@ -20,15 +20,20 @@ let timerInterval = null;
 let playerName = '';
 
 // Prompt for name as soon as the page loads
-window.onload = () => {
-  // Ensure the prompt is the first thing the user sees
-  playerName = prompt("Enter your name:");
-  
-  if (playerName) {
-    socket.emit('joinGame', playerName); // Emit join event once the name is provided
+function promptForName() {
+  const name = prompt("Enter your name:");
+  if (name && name.trim() !== "") {
+    playerName = name.trim();
+    socket.emit('joinGame', playerName);
   } else {
-    alert("You need to enter a name to play!");
+    alert("A name is required to play!");
+    promptForName(); // Recursively ask for the name until the user provides it
   }
+}
+
+// Call promptForName when the page loads
+window.onload = () => {
+  promptForName();
 };
 
 // Update player list
@@ -133,4 +138,4 @@ socket.on('gameOver', (finalData) => {
     `;
     finalPresentation.appendChild(div);
   });
-}
+});
