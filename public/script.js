@@ -1,5 +1,6 @@
 const socket = io();
 let isSubmitted = false;
+let currentRoundType = 'writing';
 
 // Ask for player name
 const playerName = prompt('Enter your name:');
@@ -48,9 +49,11 @@ socket.on('updatePlayers', (players) => {
     .join('');
 });
 
-socket.on('startRound', ({ round, maxRounds, timerDuration }) => {
+socket.on('startRound', ({ round, maxRounds, timerDuration, roundType }) => {
   isSubmitted = false;
   submitButton.textContent = 'Submit';
+
+  currentRoundType = roundType;  // Update round type (writing or drawing)
 
   timerElement.textContent = `Round ${round} / ${maxRounds} - Time Left: ${timerDuration}s`;
   clearInterval(timerInterval);
