@@ -13,6 +13,7 @@ let gameState = {
   maxRounds: 0,
   timerDuration: 60,
   submissions: {},
+  roundType: 'writing', // Start with writing
 };
 
 app.use(express.static('public'));
@@ -93,6 +94,7 @@ function startRound() {
     round: gameState.currentRound,
     maxRounds: gameState.maxRounds,
     timerDuration: gameState.timerDuration,
+    roundType: gameState.roundType,
   });
 
   // Start a timer for the round
@@ -106,6 +108,9 @@ function startRound() {
 
 function advanceRound() {
   resetSubmissions();
+
+  // Alternate round type (writing/drawing)
+  gameState.roundType = gameState.roundType === 'writing' ? 'drawing' : 'writing';
 
   if (gameState.currentRound < gameState.maxRounds) {
     gameState.currentRound++;
