@@ -9,32 +9,23 @@
 <body>
   <div id="game-container">
     <h1>Telestrations Game</h1>
-    <div id="game-info">
-      <div id="player-list"></div>
-      <button id="start-button" style="display:none;">Start Game</button>
+
+    <!-- Lobby Section (Before Game Starts) -->
+    <div id="lobby" style="display: block;">
+      <h2>Players</h2>
+      <ul id="player-list"></ul>
+      <button id="start-button" style="display: none;" disabled>Start Game</button>
     </div>
 
-    <!-- Word input section (for the first round) -->
-    <div id="word-input-container" style="display:none;">
-      <input id="word-input-field" type="text" placeholder="Enter your word" />
-      <button id="word-submit-button">Submit</button>
-    </div>
-
-    <!-- Drawing board section -->
-    <div id="drawing-board" style="display:none;">
-      <canvas id="canvas" width="500" height="400" style="border:1px solid black;"></canvas>
-      <button id="submit-button">Submit</button>
-      <div id="overlay" style="display:none; position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); color:white; font-size:24px; text-align:center; line-height:400px;">
-        Submitted
+    <!-- Game Section (After Game Starts) -->
+    <div id="game" style="display: none;">
+      <h2>Round Info</h2>
+      <div id="timer">Time Left: 60s</div>
+      <h3>Draw your word!</h3>
+      <div>
+        <canvas id="canvas" width="500" height="400" style="border: 1px solid #000;"></canvas>
       </div>
-    </div>
-
-    <!-- Timer section (Initially hidden) -->
-    <div id="timer" style="display:none; margin-top: 20px;">Time left: 60s</div>
-
-    <!-- Final Presentation -->
-    <div id="final-presentation" style="display:none; margin-top: 30px;">
-      <h2>Final Presentation</h2>
+      <button id="submit-drawing">Submit</button>
     </div>
   </div>
 
