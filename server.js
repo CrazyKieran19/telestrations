@@ -10,7 +10,7 @@ let gameState = {
   players: [],
   isGameStarted: false,
   currentRound: 0,
-  maxRounds: 5,
+  maxRounds: 0,
   timerDuration: 60,
   submissions: {},
 };
@@ -50,6 +50,7 @@ io.on('connection', (socket) => {
     if (gameState.players.length >= 3) {
       gameState.isGameStarted = true;
       gameState.currentRound = 1;
+      gameState.maxRounds = gameState.players.length * 2; // Scale rounds with player count
       resetSubmissions();
       startRound();
     } else {
@@ -89,6 +90,7 @@ function resetSubmissions() {
 function startRound() {
   io.emit('startRound', {
     round: gameState.currentRound,
+    maxRounds: gameState.maxRounds,
     timerDuration: gameState.timerDuration,
   });
 
