@@ -1,24 +1,18 @@
 {
   "name": "telestrations-game",
   "version": "1.0.0",
-  "description": "An online Telestrations game",
+  "description": "Online Telestrations game",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
     "express": "^4.18.2",
-    "socket.io": "^4.6.1"
+    "socket.io": "^4.5.4"
   },
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=14"
   },
-  "keywords": [
-    "telestrations",
-    "game",
-    "socket.io",
-    "express"
-  ],
   "author": "Your Name",
-  "license": "MIT"
+  "license": "ISC"
 }
