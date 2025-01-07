@@ -21,8 +21,12 @@ h1 {
   margin-bottom: 20px;
 }
 
-#player-list {
+#player-list-container {
   margin: 20px 0;
+}
+
+#player-list {
+  margin-top: 10px;
   list-style-type: none; /* Remove bullet points */
   padding: 0;
 }
