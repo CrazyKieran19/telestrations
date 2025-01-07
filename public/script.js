@@ -30,6 +30,7 @@ socket.on('disableStartButton', () => {
 
 startButton.addEventListener('click', () => {
   socket.emit('startGame');
+  startButton.disabled = true;  // Disable the button once clicked
 });
 
 submitButton.addEventListener('click', () => {
@@ -68,4 +69,9 @@ socket.on('endGame', (finalState) => {
   clearInterval(timerInterval);
   alert('Game Over! Check out the final results.');
   console.log('Final Game State:', finalState);
+});
+
+socket.on('gameStarted', () => {
+  document.getElementById('lobby').style.display = 'none';
+  document.getElementById('game').style.display = 'block';
 });
