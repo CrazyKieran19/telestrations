@@ -16,8 +16,15 @@ body {
   height: 100%;
 }
 
+h1 {
+  font-size: 36px;
+  margin-bottom: 20px;
+}
+
 #player-list {
   margin: 20px 0;
+  list-style-type: none; /* Remove bullet points */
+  padding: 0;
 }
 
 button {
@@ -34,4 +41,5 @@ button {
 
 canvas {
   border: 1px solid #000;
+  margin-top: 20px;
 }
