@@ -6,14 +6,13 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Game state
 let gameState = {
   players: [],
   isGameStarted: false,
-  round: 0,
-  maxRounds: 3,
-  submissions: [],
-  timer: null,
+  currentRound: 0,
+  maxRounds: 5,
+  timerDuration: 60,
+  submissions: {},
 };
 
 app.use(express.static('public'));
@@ -25,16 +24,18 @@ app.get('/', (req, res) => {
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
-  // Player joins the game
+  // Handle player joining
   socket.on('joinGame', (name) => {
     if (!gameState.isGameStarted) {
-      gameState.players.push({ id: socket.id, name, hasSubmitted: false });
+      gameState.players.push({ id: socket.id, name });
       io.emit('updatePlayers', gameState.players);
 
+      // If host, emit gameHost
       if (gameState.players.length === 1) {
         socket.emit('gameHost');
       }
 
+      // Notify host if there are at least 3 players
       if (gameState.players.length >= 3) {
         const hostSocket = gameState.players[0].id;
         io.to(hostSocket).emit('enableStartButton');
@@ -44,33 +45,29 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Host starts the game
+  // Start the game
   socket.on('startGame', () => {
     if (gameState.players.length >= 3) {
       gameState.isGameStarted = true;
-      gameState.round = 1;
-      io.emit('gameStarted', { round: gameState.round, timerDuration: 60 });
-      startTimer();
+      gameState.currentRound = 1;
+      resetSubmissions();
+      startRound();
     } else {
       socket.emit('notEnoughPlayers');
     }
   });
 
-  // Player submits their drawing or guess
-  socket.on('submit', (submission) => {
-    const player = gameState.players.find((p) => p.id === socket.id);
-    if (player) {
-      player.hasSubmitted = true;
-      gameState.submissions.push(submission);
+  // Handle submissions
+  socket.on('submit', (data) => {
+    gameState.submissions[socket.id] = data;
 
-      // Check if all players have submitted
-      if (gameState.players.every((p) => p.hasSubmitted)) {
-        advanceRound();
-      }
+    // Check if all players have submitted
+    if (Object.keys(gameState.submissions).length === gameState.players.length) {
+      advanceRound();
     }
   });
 
-  // Player disconnects
+  // Handle disconnection
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
     gameState.players = gameState.players.filter((player) => player.id !== socket.id);
@@ -83,45 +80,42 @@ io.on('connection', (socket) => {
       }
     }
   });
-
-  // Advance the game to the next round
-  function advanceRound() {
-    clearTimeout(gameState.timer);
-    gameState.round++;
-
-    // Reset submission state
-    gameState.players.forEach((p) => (p.hasSubmitted = false));
-    gameState.submissions = [];
-
-    if (gameState.round > gameState.maxRounds) {
-      io.emit('gameOver', { submissions: gameState.submissions });
-      resetGame();
-    } else {
-      io.emit('newRound', { round: gameState.round, timerDuration: 60 });
-      startTimer();
-    }
-  }
-
-  // Timer function
-  function startTimer() {
-    gameState.timer = setTimeout(() => {
-      advanceRound();
-    }, 60000);
-  }
-
-  // Reset the game
-  function resetGame() {
-    gameState = {
-      players: [],
-      isGameStarted: false,
-      round: 0,
-      maxRounds: 3,
-      submissions: [],
-      timer: null,
-    };
-    io.emit('reset');
-  }
 });
+
+function resetSubmissions() {
+  gameState.submissions = {};
+}
+
+function startRound() {
+  io.emit('startRound', {
+    round: gameState.currentRound,
+    timerDuration: gameState.timerDuration,
+  });
+
+  // Start a timer for the round
+  setTimeout(() => {
+    if (Object.keys(gameState.submissions).length < gameState.players.length) {
+      console.log('Timer ran out, advancing round...');
+      advanceRound();
+    }
+  }, gameState.timerDuration * 1000);
+}
+
+function advanceRound() {
+  resetSubmissions();
+
+  if (gameState.currentRound < gameState.maxRounds) {
+    gameState.currentRound++;
+    startRound();
+  } else {
+    endGame();
+  }
+}
+
+function endGame() {
+  io.emit('endGame', gameState);
+  gameState.isGameStarted = false;
+}
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
