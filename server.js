@@ -53,6 +53,7 @@ io.on('connection', (socket) => {
       gameState.maxRounds = gameState.players.length * 2; // Scale rounds with player count
       resetSubmissions();
       startRound();
+      io.emit('gameStarted');
     } else {
       socket.emit('notEnoughPlayers');
     }
