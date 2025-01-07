@@ -6,7 +6,6 @@ const playerList = document.getElementById('player-list');
 const wordInputContainer = document.getElementById('word-input-container');
 const timerDisplay = document.getElementById('timer');
 const finalPresentation = document.getElementById('final-presentation');
-const overlay = document.getElementById('overlay');
 
 // Game state
 let playerName = '';
@@ -33,15 +32,23 @@ socket.on('updatePlayers', (players) => {
   playerList.innerHTML = 'Players: ' + players.map(player => player.name).join(', ');
 });
 
-// Identify host and show the "Start Game" button
+// Identify host and show the "Start Game" button when ready
 socket.on('gameHost', () => {
   isHost = true;
-  startButton.style.display = 'block'; // Show button only for the host
 });
 
-// Handle "not enough players" error
-socket.on('notEnoughPlayers', () => {
-  alert('You need at least 3 players to start the game.');
+// Enable the "Start Game" button when there are at least 3 players
+socket.on('enableStartButton', () => {
+  if (isHost) {
+    startButton.style.display = 'block';
+  }
+});
+
+// Disable the "Start Game" button if players drop below 3
+socket.on('disableStartButton', () => {
+  if (isHost) {
+    startButton.style.display = 'none';
+  }
 });
 
 // Start game when the button is clicked (host only)
