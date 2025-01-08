@@ -57,7 +57,7 @@ io.on('connection', (socket) => {
   });
 
   // Handle drawing submission
-  socket.on('sendDrawing', (input) => {
+  socket.on('sendDrawing', () => {
     gameState.submitting.add(socket.id);
     if (gameState.submitting.size === gameState.players.length) {
       io.emit('allSubmitted', gameState);
