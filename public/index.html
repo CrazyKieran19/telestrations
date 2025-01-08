@@ -7,31 +7,26 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- Game Title -->
-  <h1 id="game-title" style="text-align: center; margin-top: 20px;">Telestrations Online</h1>
-
-  <!-- Lobby Section -->
-  <div id="lobby" style="text-align: center; margin-top: 20px;">
-    <!-- Player List -->
-    <div id="player-list" style="margin-top: 10px;">
-      <h2>Players</h2>
-      <div id="players"></div>
+  <div id="lobby">
+    <h1>Telestrations Online</h1>
+    <div id="players"></div>
+    <button id="start-button" style="display:none;">Start Game</button>
+  </div>
+  <div id="game" style="display:none;">
+    <div id="drawing-container">
+      <canvas id="drawing-board"></canvas>
+      <button id="submit-drawing">Submit Drawing</button>
     </div>
-
-    <!-- Start Button -->
-    <button id="start-button" 
-            style="display: none; margin-top: 20px; background-color: #ccc; color: white; padding: 10px 20px; font-size: 16px; border: none; border-radius: 5px;" 
-            disabled>
-      Start Game
-    </button>
+    <div id="guess-container">
+      <p id="current-word"></p>
+      <input type="text" id="guess-input" placeholder="Write your guess...">
+      <button id="submit-guess">Submit Guess</button>
+    </div>
+    <div id="results">
+      <h2>Results</h2>
+      <div id="progression"></div>
+    </div>
   </div>
-
-  <!-- Game Section -->
-  <div id="game" style="display: none;">
-    <h2 style="text-align: center;">Game</h2>
-    <div id="game-content" style="text-align: center;"></div>
-  </div>
-
   <script src="/socket.io/socket.io.js"></script>
   <script src="script.js"></script>
 </body>
