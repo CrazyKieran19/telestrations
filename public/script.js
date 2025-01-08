@@ -12,7 +12,7 @@ const currentRoundDisplay = document.getElementById('current-round');
 let players = [];
 let currentRound = 0;
 
-// Prompt for player name and emit join game
+// Emit join game with player name
 socket.emit('joinGame', playerName);
 
 socket.on('playerListUpdate', (newPlayers) => {
