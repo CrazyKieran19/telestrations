@@ -10,7 +10,8 @@ let gameState = {
   players: [],
   rounds: [],
   currentRound: 0,
-  isGameStarted: false
+  isGameStarted: false,
+  submitting: new Set(), // Set to track players who have submitted
 };
 
 app.use(express.static('public'));  // Serve frontend assets
@@ -42,26 +43,24 @@ io.on('connection', (socket) => {
       gameState.isGameStarted = true;
       gameState.currentRound = 0;
       io.emit('gameStart', gameState);
+
+      // Set a timer for 60 seconds
+      setTimeout(() => {
+        if (gameState.submitting.size !== gameState.players.length) {
+          io.emit('roundTimeout', gameState);
+        }
+      }, 60000); // 60 seconds
     } else {
       socket.emit('error', 'You need at least 3 players to start the game.');
     }
   });
 
   // Handle drawing submission
-  socket.on('sendDrawing', (drawing) => {
-    if (gameState.currentRound % 2 === 0) {
-      // Writing phase
-      gameState.rounds.push({ round: gameState.currentRound, word: drawing });
-    } else {
-      // Drawing phase
-      gameState.rounds[gameState.currentRound - 1].drawing = drawing;
-    }
+  socket.on('sendDrawing', (input) => {
+    gameState.submitting.add(socket.id);
 
-    if (gameState.currentRound < gameState.players.length * 2) {
-      gameState.currentRound++;
-      io.emit('nextRound', gameState);
-    } else {
-      io.emit('gameEnd', gameState);
+    if (gameState.submitting.size === gameState.players.length) {
+      io.emit('allSubmitted', gameState);
     }
   });
 
