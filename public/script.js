@@ -1,5 +1,12 @@
 const socket = io();
 
+// Prompt for Player Name
+let playerName = prompt("Enter your name:");
+if (!playerName || playerName.trim() === "") {
+  playerName = "Anonymous"; // Default name if none provided
+}
+socket.emit('joinGame', playerName);
+
 // Game Variables
 let isHost = false;
 let players = [];
@@ -21,13 +28,21 @@ socket.on('playerListUpdate', (playerList) => {
   }
 });
 
-// Start Game
+// Start Game Button
 document.getElementById('start-button').addEventListener('click', () => {
   if (players.length < 3) {
     alert("You need at least 3 players to start the game!");
     return;
   }
   socket.emit('startGame');
+});
+
+// Handle Host Status
+socket.on('youAreHost', () => {
+  isHost = true;
+  const startButton = document.getElementById('start-button');
+  startButton.style.display = 'block';
+  startButton.disabled = players.length < 3; // Enable only if 3+ players
 });
 
 // Game Starts
