@@ -87,3 +87,8 @@ socket.on('allSubmitted', (gameState) => {
   // Advance to the next round
   socket.emit('sendDrawing', 'submitted');
 });
+
+// Update timer
+socket.on('updateTimer', (timeLeft) => {
+  document.getElementById('timer-display').textContent = timeLeft;
+});
