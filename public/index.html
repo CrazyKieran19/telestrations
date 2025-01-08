@@ -13,16 +13,17 @@
     <button id="start-button" style="display:none;">Start Game</button>
   </div>
   <div id="game" style="display:none;">
-    <div id="drawing-container">
+    <div id="writing-container" style="display:block;">
+      <p id="current-word">Write your word:</p>
+      <input type="text" id="write-input" placeholder="Your word...">
+      <button id="submit-write">Submit</button>
+    </div>
+    <div id="drawing-container" style="display:none;">
+      <p id="drawing-word"></p>
       <canvas id="drawing-board"></canvas>
       <button id="submit-drawing">Submit Drawing</button>
     </div>
-    <div id="guess-container">
-      <p id="current-word"></p>
-      <input type="text" id="guess-input" placeholder="Write your guess...">
-      <button id="submit-guess">Submit Guess</button>
-    </div>
-    <div id="results">
+    <div id="results" style="display:none;">
       <h2>Results</h2>
       <div id="progression"></div>
     </div>
