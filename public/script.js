@@ -10,52 +10,62 @@ const submitButton = document.getElementById('submit-drawing');
 const timerDisplay = document.getElementById('timer-display');
 const currentRoundDisplay = document.getElementById('current-round');
 let players = [];
-let currentRound = 0;
+let isHost = false;
 
 // Emit join game with player name
 socket.emit('joinGame', playerName);
 
+// Update player list and manage start button visibility
 socket.on('playerListUpdate', (newPlayers) => {
   players = newPlayers;
   playerList.innerHTML = 'Players: ' + players.map(player => player.name).join(', ');
 
   // Enable Start Game button when 3 or more players join
-  if (players.length >= 3) {
-    startButton.style.display = 'block';
-    startButton.style.backgroundColor = 'blue';  // Change color to blue
-  } else {
-    startButton.style.display = 'none';
+  if (players.length >= 3 && isHost) {
+    startButton.classList.add('enabled');
+    startButton.classList.remove('disabled');
+    startButton.disabled = false;
+  } else if (isHost) {
+    startButton.classList.add('disabled');
+    startButton.classList.remove('enabled');
+    startButton.disabled = true;
   }
 });
 
+// Only show the start button to the host
 socket.on('youAreHost', () => {
+  isHost = true;
   startButton.style.display = 'block';
 });
 
+// Start game logic
 socket.on('gameStart', (state) => {
   drawingBoard.style.display = 'block';
   startButton.style.display = 'none';
-  currentRound = state.currentRound;
-  currentRoundDisplay.textContent = currentRound;
+  currentRoundDisplay.textContent = state.currentRound;
   timerDisplay.textContent = state.timer;
 });
 
+// Timer update
 socket.on('updateTimer', (timer) => {
   timerDisplay.textContent = timer;
 });
 
-socket.on('roundTimeout', (state) => {
+// Handle round timeout
+socket.on('roundTimeout', () => {
   drawingBoard.style.display = 'none';
-  if (state.submitting.size === state.players.length) {
-    submitButton.textContent = 'Submitted';
-    submitButton.disabled = true;
+});
+
+// Start button click event
+startButton.addEventListener('click', () => {
+  if (players.length >= 3) {
+    socket.emit('startGame');
+  } else {
+    alert('You need at least 3 players to start the game.');
   }
 });
 
-submitButton.addEventListener('click', () => {
-  socket.emit('sendDrawing');
-});
-
+// Drawing functionality
 canvas.addEventListener('mousedown', (e) => {
   const { offsetX, offsetY } = e;
   ctx.beginPath();
