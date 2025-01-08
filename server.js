@@ -1,131 +1,57 @@
 const express = require('express');
+const socketIo = require('socket.io');
 const http = require('http');
-const { Server } = require('socket.io');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = socketIo(server);
 
 let gameState = {
   players: [],
-  isGameStarted: false,
-  currentRound: 0,
-  maxRounds: 0,
-  timerDuration: 60,
-  submissions: {},
-  roundType: 'writing', // Start with writing
+  isGameStarted: false
 };
 
-app.use(express.static('public'));
+app.use(express.static('public'));  // Serve frontend assets
 
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/public/index.html');
 });
 
 io.on('connection', (socket) => {
-  console.log('User connected:', socket.id);
+  console.log('A user connected:', socket.id);
 
   // Handle player joining
-  socket.on('joinGame', (name) => {
-    if (!gameState.isGameStarted) {
-      gameState.players.push({ id: socket.id, name });
-      io.emit('updatePlayers', gameState.players);
+  socket.on('joinGame', (playerName) => {
+    const player = { id: socket.id, name: playerName };
+    gameState.players.push(player);
 
-      // If host, emit gameHost
-      if (gameState.players.length === 1) {
-        socket.emit('gameHost');
-      }
+    // Broadcast the updated player list
+    io.emit('playerListUpdate', gameState.players);
 
-      // Notify host if there are at least 3 players
-      if (gameState.players.length >= 3) {
-        const hostSocket = gameState.players[0].id;
-        io.to(hostSocket).emit('enableStartButton');
-      }
-    } else {
-      socket.emit('gameFull');
+    // Assign host to the first player who joins
+    if (gameState.players.length === 1) {
+      socket.emit('youAreHost');
     }
   });
 
-  // Start the game
+  // Handle start game
   socket.on('startGame', () => {
     if (gameState.players.length >= 3) {
       gameState.isGameStarted = true;
-      gameState.currentRound = 1;
-      gameState.maxRounds = gameState.players.length * 2; // Scale rounds with player count
-      resetSubmissions();
-      startRound();
-      io.emit('gameStarted');
+      io.emit('gameStart');
     } else {
-      socket.emit('notEnoughPlayers');
+      socket.emit('error', 'You need at least 3 players to start the game.');
     }
   });
 
-  // Handle submissions
-  socket.on('submit', (data) => {
-    gameState.submissions[socket.id] = data;
-
-    // Check if all players have submitted
-    if (Object.keys(gameState.submissions).length === gameState.players.length) {
-      advanceRound();
-    }
-  });
-
-  // Handle disconnection
+  // Handle player disconnect
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
-    gameState.players = gameState.players.filter((player) => player.id !== socket.id);
-    io.emit('updatePlayers', gameState.players);
-
-    if (gameState.players.length < 3 && !gameState.isGameStarted) {
-      const hostSocket = gameState.players[0]?.id;
-      if (hostSocket) {
-        io.to(hostSocket).emit('disableStartButton');
-      }
-    }
+    gameState.players = gameState.players.filter(player => player.id !== socket.id);
+    io.emit('playerListUpdate', gameState.players);
   });
 });
 
-function resetSubmissions() {
-  gameState.submissions = {};
-}
-
-function startRound() {
-  io.emit('startRound', {
-    round: gameState.currentRound,
-    maxRounds: gameState.maxRounds,
-    timerDuration: gameState.timerDuration,
-    roundType: gameState.roundType,
-  });
-
-  // Start a timer for the round
-  setTimeout(() => {
-    if (Object.keys(gameState.submissions).length < gameState.players.length) {
-      console.log('Timer ran out, advancing round...');
-      advanceRound();
-    }
-  }, gameState.timerDuration * 1000);
-}
-
-function advanceRound() {
-  resetSubmissions();
-
-  // Alternate round type (writing/drawing)
-  gameState.roundType = gameState.roundType === 'writing' ? 'drawing' : 'writing';
-
-  if (gameState.currentRound < gameState.maxRounds) {
-    gameState.currentRound++;
-    startRound();
-  } else {
-    endGame();
-  }
-}
-
-function endGame() {
-  io.emit('endGame', gameState);
-  gameState.isGameStarted = false;
-}
-
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+server.listen(process.env.PORT || 3000, () => {
+  console.log('Server is running');
 });
