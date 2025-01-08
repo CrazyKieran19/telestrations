@@ -7,10 +7,15 @@ const drawingBoard = document.getElementById('drawing-board');
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const submitButton = document.getElementById('submit-drawing');
+const wordInput = document.getElementById('word-input');
 const timerDisplay = document.getElementById('timer-display');
 const currentRoundDisplay = document.getElementById('current-round');
 let players = [];
 let isHost = false;
+let roundData = []; // Holds words or drawings for each round
+let currentRound = 1;
+let isWriting = true; // Track if the current round is writing
+let submitted = false;
 
 // Emit join game with player name
 socket.emit('joinGame', playerName);
@@ -39,11 +44,9 @@ socket.on('youAreHost', () => {
 });
 
 // Start game logic
-socket.on('gameStart', (state) => {
-  drawingBoard.style.display = 'block';
+socket.on('gameStart', () => {
   startButton.style.display = 'none';
-  currentRoundDisplay.textContent = state.currentRound;
-  timerDisplay.textContent = state.timer;
+  startRound();
 });
 
 // Timer update
@@ -53,7 +56,9 @@ socket.on('updateTimer', (timer) => {
 
 // Handle round timeout
 socket.on('roundTimeout', () => {
-  drawingBoard.style.display = 'none';
+  if (!submitted) {
+    handleSubmit();
+  }
 });
 
 // Start button click event
@@ -64,6 +69,87 @@ startButton.addEventListener('click', () => {
     alert('You need at least 3 players to start the game.');
   }
 });
+
+// Handle submit button click
+submitButton.addEventListener('click', () => {
+  if (!submitted) {
+    handleSubmit();
+  }
+});
+
+// Handle submit logic
+function handleSubmit() {
+  submitted = true;
+  submitButton.textContent = 'Submitted';
+  let submission;
+
+  if (isWriting) {
+    submission = wordInput.value.trim();
+    if (!submission) {
+      alert('Please enter a word.');
+      return;
+    }
+  } else {
+    submission = canvas.toDataURL(); // Capture the drawing as an image
+  }
+
+  socket.emit('submitRound', { submission, round: currentRound });
+}
+
+// Receive submissions and advance the round
+socket.on('advanceRound', (data) => {
+  roundData = data;
+  currentRound++;
+
+  if (currentRound > players.length) {
+    endGame();
+  } else {
+    isWriting = !isWriting;
+    startRound();
+  }
+});
+
+// Start a new round
+function startRound() {
+  submitted = false;
+  submitButton.textContent = 'Submit';
+  currentRoundDisplay.textContent = `Round ${currentRound}`;
+
+  if (isWriting) {
+    wordInput.style.display = 'block';
+    drawingBoard.style.display = 'none';
+
+    const previousWord = getPreviousWord();
+    wordInput.value = previousWord ? `Guess this word: ${previousWord}` : '';
+  } else {
+    wordInput.style.display = 'none';
+    drawingBoard.style.display = 'block';
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const previousDrawing = getPreviousDrawing();
+    // Display previous drawing (not implemented here)
+  }
+}
+
+// Get the previous word for this player
+function getPreviousWord() {
+  const index = players.findIndex((player) => player.name === playerName);
+  const previousIndex = (index - 1 + players.length) % players.length;
+  return roundData[previousIndex]?.submission || '';
+}
+
+// Get the previous drawing for this player
+function getPreviousDrawing() {
+  const index = players.findIndex((player) => player.name === playerName);
+  const previousIndex = (index - 1 + players.length) % players.length;
+  return roundData[previousIndex]?.submission || null;
+}
+
+// End game logic
+function endGame() {
+  alert('Game over! Showing results...');
+  // Display results (not implemented here)
+}
 
 // Drawing functionality
 canvas.addEventListener('mousedown', (e) => {
