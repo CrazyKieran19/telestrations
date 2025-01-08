@@ -10,35 +10,35 @@ socket.emit('joinGame', playerName);
 // Game variables
 let isHost = false;
 
-// Update player list and manage start button
+// Update player list
 socket.on('playerListUpdate', (playerList) => {
   const playersDiv = document.getElementById('players');
   playersDiv.innerHTML = ''; // Clear existing player names
 
-  // Populate player list
+  // Add each player to the list
   playerList.forEach(player => {
     const playerItem = document.createElement('p');
     playerItem.textContent = player.name;
     playersDiv.appendChild(playerItem);
   });
 
-  // Enable or disable start button based on player count
+  // Show and enable/disable start button for the host
+  const startButton = document.getElementById('start-button');
   if (isHost) {
-    const startButton = document.getElementById('start-button');
     startButton.style.display = 'block';
     startButton.disabled = playerList.length < 3;
     startButton.style.backgroundColor = playerList.length >= 3 ? '#007bff' : '#ccc';
   }
 });
 
-// Handle host status
+// Assign host status
 socket.on('youAreHost', () => {
   isHost = true;
   const startButton = document.getElementById('start-button');
-  startButton.style.display = 'block';
+  startButton.style.display = 'block'; // Show the start button for the host
 });
 
-// Start button functionality
+// Handle start button click
 document.getElementById('start-button').addEventListener('click', () => {
   socket.emit('startGame');
 });
@@ -49,7 +49,7 @@ socket.on('gameStart', () => {
   document.getElementById('game').style.display = 'block';
 });
 
-// Initial update of player list
+// Receive initial player list
 socket.on('initialPlayerList', (playerList) => {
   const playersDiv = document.getElementById('players');
   playersDiv.innerHTML = ''; // Clear existing player names
