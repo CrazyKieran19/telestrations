@@ -16,6 +16,10 @@ button {
 
 #start-button {
   display: none;  /* Hidden by default */
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 #player-list {
