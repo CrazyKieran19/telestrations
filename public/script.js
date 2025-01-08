@@ -1,94 +1,66 @@
 const socket = io();
 
-// Prompt for player name
-let playerName = prompt("Enter your name:");
-if (!playerName || playerName.trim() === "") {
-  playerName = "Anonymous"; // Default name if blank
-}
+const playerName = prompt("Enter your name:");
+const startButton = document.getElementById('start-button');
+const playerList = document.getElementById('player-list');
+const drawingBoard = document.getElementById('drawing-board');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const submitButton = document.getElementById('submit-drawing');
+const timerDisplay = document.getElementById('timer-display');
+const currentRoundDisplay = document.getElementById('current-round');
+let players = [];
+let currentRound = 0;
+
 socket.emit('joinGame', playerName);
 
-// Game variables
-let isHost = false;
-
-// Update player list
-socket.on('playerListUpdate', (playerList) => {
-  const playersDiv = document.getElementById('players');
-  playersDiv.innerHTML = ''; // Clear existing player names
-
-  // Add each player to the list
-  playerList.forEach(player => {
-    const playerItem = document.createElement('p');
-    playerItem.textContent = player.name;
-    playersDiv.appendChild(playerItem);
-  });
-
-  // Show and enable/disable start button for the host
-  const startButton = document.getElementById('start-button');
-  if (isHost) {
-    startButton.style.display = 'block';
-    startButton.disabled = playerList.length < 3;
-    startButton.style.backgroundColor = playerList.length >= 3 ? '#007bff' : '#ccc';
-  }
+socket.on('playerListUpdate', (newPlayers) => {
+  players = newPlayers;
+  playerList.innerHTML = 'Players: ' + players.map(player => player.name).join(', ');
 });
 
-// Assign host status
 socket.on('youAreHost', () => {
-  isHost = true;
-  const startButton = document.getElementById('start-button');
-  startButton.style.display = 'block'; // Show the start button for the host
+  startButton.style.display = 'block';
 });
 
-// Handle start button click
-document.getElementById('start-button').addEventListener('click', () => {
-  socket.emit('startGame');
+socket.on('gameStart', (state) => {
+  drawingBoard.style.display = 'block';
+  startButton.style.display = 'none';
+  currentRound = state.currentRound;
+  currentRoundDisplay.textContent = currentRound;
+  timerDisplay.textContent = state.timer;
 });
 
-// Game start
-socket.on('gameStart', (gameState) => {
-  document.getElementById('lobby').style.display = 'none';
-  document.getElementById('game').style.display = 'block';
+socket.on('updateTimer', (timer) => {
+  timerDisplay.textContent = timer;
+});
 
-  // Handle writing phase
-  if (gameState.currentRound % 2 === 0) {
-    document.getElementById('writing-container').style.display = 'block';
-    document.getElementById('current-word').textContent = 'Write your word:';
-  }
-  // Handle drawing phase
-  else {
-    document.getElementById('drawing-container').style.display = 'block';
-    document.getElementById('drawing-word').textContent = `Draw this word: ${gameState.rounds[gameState.currentRound - 1].word}`;
+socket.on('roundTimeout', (state) => {
+  drawingBoard.style.display = 'none';
+  if (state.submitting.size === state.players.length) {
+    submitButton.textContent = 'Submitted';
+    submitButton.disabled = true;
   }
 });
 
-// Drawing submission
-document.getElementById('submit-drawing').addEventListener('click', () => {
-  const canvas = document.getElementById('drawing-board');
-  const ctx = canvas.getContext('2d');
-  const drawing = canvas.toDataURL();
-  socket.emit('sendDrawing', drawing);
+submitButton.addEventListener('click', () => {
+  socket.emit('sendDrawing');
 });
 
-// Writing submission
-document.getElementById('submit-write').addEventListener('click', () => {
-  const writeInput = document.getElementById('write-input').value;
-  socket.emit('sendDrawing', writeInput);
+canvas.addEventListener('mousedown', (e) => {
+  const { offsetX, offsetY } = e;
+  ctx.beginPath();
+  ctx.moveTo(offsetX, offsetY);
+
+  canvas.addEventListener('mousemove', draw);
 });
 
-// Handle round timeout
-socket.on('roundTimeout', (gameState) => {
-  document.getElementById('progression').innerHTML = 'Time is up! Moving to the next round...';
-  // Advance to the next round
-  socket.emit('sendDrawing', 'timeout');
+canvas.addEventListener('mouseup', () => {
+  canvas.removeEventListener('mousemove', draw);
 });
 
-// Handle everyone submitted
-socket.on('allSubmitted', (gameState) => {
-  document.getElementById('progression').innerHTML = 'All players have submitted. Moving to the next round...';
-  // Advance to the next round
-  socket.emit('sendDrawing', 'submitted');
-});
-
-// Update timer
-socket.on('updateTimer', (timeLeft) => {
-  document.getElementById('timer-display').textContent = timeLeft;
-});
+function draw(e) {
+  const { offsetX, offsetY } = e;
+  ctx.lineTo(offsetX, offsetY);
+  ctx.stroke();
+}
