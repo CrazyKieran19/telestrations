@@ -12,11 +12,20 @@ const currentRoundDisplay = document.getElementById('current-round');
 let players = [];
 let currentRound = 0;
 
+// Prompt for player name and emit join game
 socket.emit('joinGame', playerName);
 
 socket.on('playerListUpdate', (newPlayers) => {
   players = newPlayers;
   playerList.innerHTML = 'Players: ' + players.map(player => player.name).join(', ');
+
+  // Enable Start Game button when 3 or more players join
+  if (players.length >= 3) {
+    startButton.style.display = 'block';
+    startButton.style.backgroundColor = 'blue';  // Change color to blue
+  } else {
+    startButton.style.display = 'none';
+  }
 });
 
 socket.on('youAreHost', () => {
