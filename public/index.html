@@ -8,19 +8,27 @@
 </head>
 <body>
   <!-- Game Title -->
-  <h1 style="text-align: center; margin-top: 20px;">Telestrations Online</h1>
+  <h1 id="game-title" style="text-align: center; margin-top: 20px;">Telestrations Online</h1>
 
   <!-- Lobby Section -->
-  <div id="lobby" style="text-align: center;">
-    <div id="player-list" style="margin-top: 20px;"></div>
-    <button id="start-button" style="display:none; margin-top: 20px; background-color: #ccc; color: white; padding: 10px 20px; font-size: 16px; border: none; border-radius: 5px;" disabled>
+  <div id="lobby" style="text-align: center; margin-top: 20px;">
+    <!-- Player List -->
+    <div id="player-list" style="margin-top: 10px;">
+      <h2>Players</h2>
+      <div id="players"></div>
+    </div>
+
+    <!-- Start Button -->
+    <button id="start-button" 
+            style="display: none; margin-top: 20px; background-color: #ccc; color: white; padding: 10px 20px; font-size: 16px; border: none; border-radius: 5px;" 
+            disabled>
       Start Game
     </button>
   </div>
 
   <!-- Game Section -->
   <div id="game" style="display: none;">
-    <h2 id="game-title" style="text-align: center;">Game</h2>
+    <h2 style="text-align: center;">Game</h2>
     <div id="game-content" style="text-align: center;"></div>
   </div>
 
