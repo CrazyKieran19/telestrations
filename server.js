@@ -8,6 +8,8 @@ const io = socketIo(server);
 
 let gameState = {
   players: [],
+  rounds: [],
+  currentRound: 0,
   isGameStarted: false
 };
 
@@ -38,9 +40,28 @@ io.on('connection', (socket) => {
   socket.on('startGame', () => {
     if (gameState.players.length >= 3) {
       gameState.isGameStarted = true;
-      io.emit('gameStart');
+      gameState.currentRound = 0;
+      io.emit('gameStart', gameState);
     } else {
       socket.emit('error', 'You need at least 3 players to start the game.');
+    }
+  });
+
+  // Handle drawing submission
+  socket.on('sendDrawing', (drawing) => {
+    if (gameState.currentRound % 2 === 0) {
+      // Writing phase
+      gameState.rounds.push({ round: gameState.currentRound, word: drawing });
+    } else {
+      // Drawing phase
+      gameState.rounds[gameState.currentRound - 1].drawing = drawing;
+    }
+
+    if (gameState.currentRound < gameState.players.length * 2) {
+      gameState.currentRound++;
+      io.emit('nextRound', gameState);
+    } else {
+      io.emit('gameEnd', gameState);
     }
   });
 
