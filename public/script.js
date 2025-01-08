@@ -11,15 +11,19 @@ socket.emit('joinGame', playerName);
 let isHost = false;
 let players = [];
 
-// Lobby Actions
+// Update Player List in Lobby
 socket.on('playerListUpdate', (playerList) => {
   players = playerList;
   const playerListDiv = document.getElementById('player-list');
-  playerListDiv.innerHTML = players.map(player => `<p>${player.name}</p>`).join('');
+  playerListDiv.innerHTML = `
+    <h2>Players</h2>
+    ${players.map(player => `<p>${player.name}</p>`).join('')}
+  `;
 
+  // Enable or disable start button based on player count
   if (isHost) {
     const startButton = document.getElementById('start-button');
-    startButton.disabled = players.length < 3; // Enable button only if 3+ players
+    startButton.disabled = players.length < 3;
     startButton.style.backgroundColor = players.length >= 3 ? '#007bff' : '#ccc';
   }
 });
@@ -42,15 +46,18 @@ socket.on('youAreHost', () => {
   startButton.style.backgroundColor = players.length >= 3 ? '#007bff' : '#ccc';
 });
 
-// Game Starts
+// Start the Game
 socket.on('gameStart', () => {
   document.getElementById('lobby').style.display = 'none';
   document.getElementById('game').style.display = 'block';
 });
 
-// Update player list initially
+// Initial Update of Player List
 socket.on('initialPlayerList', (playerList) => {
   players = playerList;
   const playerListDiv = document.getElementById('player-list');
-  playerListDiv.innerHTML = players.map(player => `<p>${player.name}</p>`).join('');
+  playerListDiv.innerHTML = `
+    <h2>Players</h2>
+    ${players.map(player => `<p>${player.name}</p>`).join('')}
+  `;
 });
