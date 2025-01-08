@@ -23,13 +23,20 @@
 
     <!-- Game Section (After Game Starts) -->
     <div id="game" style="display: none;">
-      <h2>Round Info</h2>
-      <div id="timer">Time Left: 60s</div>
-      <h3 id="round-type">Write or Draw!</h3>
-      <div>
-        <canvas id="canvas" width="500" height="400" style="border: 1px solid #000;"></canvas>
+      <h2 id="game-title">What is your word?</h2>
+      
+      <!-- Word Input Round -->
+      <div id="word-round" style="display: block;">
+        <input type="text" id="word-input" placeholder="Enter your word">
+        <button id="submit-word">Submit</button>
       </div>
-      <button id="submit-drawing">Submit</button>
+      
+      <!-- Drawing Round -->
+      <div id="drawing-round" style="display: none;">
+        <h3 id="word-prompt"></h3>
+        <canvas id="canvas" width="500" height="400" style="border: 1px solid #000;"></canvas>
+        <button id="submit-drawing">Submit</button>
+      </div>
     </div>
   </div>
 
