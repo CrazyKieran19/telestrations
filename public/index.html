@@ -7,37 +7,15 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="game-container">
+  <div id="lobby">
     <h1>Telestrations Online</h1>
+    <div id="player-list"></div>
+    <button id="start-button" style="display:none; margin-top: 20px; background-color: #ccc; color: white; padding: 10px 20px; font-size: 16px; border: none; border-radius: 5px;" disabled>Start Game</button>
+  </div>
 
-    <!-- Player List Section -->
-    <div id="player-list-container">
-      <h2>Players</h2>
-      <div id="player-list"></div>
-    </div>
-
-    <!-- Lobby Section (Before Game Starts) -->
-    <div id="lobby" style="display: block;">
-      <button id="start-button" style="display: none;" disabled>Start Game</button>
-    </div>
-
-    <!-- Game Section (After Game Starts) -->
-    <div id="game" style="display: none;">
-      <h2 id="game-title">What is your word?</h2>
-      
-      <!-- Word Input Round -->
-      <div id="word-round" style="display: block;">
-        <input type="text" id="word-input" placeholder="Enter your word">
-        <button id="submit-word">Submit</button>
-      </div>
-      
-      <!-- Drawing Round -->
-      <div id="drawing-round" style="display: none;">
-        <h3 id="word-prompt"></h3>
-        <canvas id="canvas" width="500" height="400" style="border: 1px solid #000;"></canvas>
-        <button id="submit-drawing">Submit</button>
-      </div>
-    </div>
+  <div id="game" style="display: none;">
+    <h1 id="game-title">Game</h1>
+    <div id="game-content"></div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
