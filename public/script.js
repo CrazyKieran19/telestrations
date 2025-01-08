@@ -13,7 +13,14 @@ let isHost = false;
 // Update player list and manage start button
 socket.on('playerListUpdate', (playerList) => {
   const playersDiv = document.getElementById('players');
-  playersDiv.innerHTML = playerList.map(player => `<p>${player.name}</p>`).join('');
+  playersDiv.innerHTML = ''; // Clear existing player names
+
+  // Populate player list
+  playerList.forEach(player => {
+    const playerItem = document.createElement('p');
+    playerItem.textContent = player.name;
+    playersDiv.appendChild(playerItem);
+  });
 
   // Enable or disable start button based on player count
   if (isHost) {
@@ -45,5 +52,12 @@ socket.on('gameStart', () => {
 // Initial update of player list
 socket.on('initialPlayerList', (playerList) => {
   const playersDiv = document.getElementById('players');
-  playersDiv.innerHTML = playerList.map(player => `<p>${player.name}</p>`).join('');
+  playersDiv.innerHTML = ''; // Clear existing player names
+
+  // Populate player list
+  playerList.forEach(player => {
+    const playerItem = document.createElement('p');
+    playerItem.textContent = player.name;
+    playersDiv.appendChild(playerItem);
+  });
 });
