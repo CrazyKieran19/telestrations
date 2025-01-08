@@ -73,3 +73,17 @@ document.getElementById('submit-write').addEventListener('click', () => {
   const writeInput = document.getElementById('write-input').value;
   socket.emit('sendDrawing', writeInput);
 });
+
+// Handle round timeout
+socket.on('roundTimeout', (gameState) => {
+  document.getElementById('progression').innerHTML = 'Time is up! Moving to the next round...';
+  // Advance to the next round
+  socket.emit('sendDrawing', 'timeout');
+});
+
+// Handle everyone submitted
+socket.on('allSubmitted', (gameState) => {
+  document.getElementById('progression').innerHTML = 'All players have submitted. Moving to the next round...';
+  // Advance to the next round
+  socket.emit('sendDrawing', 'submitted');
+});
