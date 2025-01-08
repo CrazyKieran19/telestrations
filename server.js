@@ -46,7 +46,7 @@ io.on('connection', (socket) => {
         gameState.timer--;
         io.emit('updateTimer', gameState.timer);
 
-        if (gameState.timer <= 0) {
+        if (gameState.timer <= 0 || gameState.submitting.size === gameState.players.length) {
           clearInterval(countdown);
           io.emit('roundTimeout', gameState);
         }
@@ -69,6 +69,20 @@ io.on('connection', (socket) => {
     console.log('User disconnected:', socket.id);
     gameState.players = gameState.players.filter(player => player.id !== socket.id);
     io.emit('playerListUpdate', gameState.players);
+
+    // Reset game state if no players left
+    if (gameState.players.length === 0) {
+      clearInterval(gameState.timer);
+      gameState = {
+        players: [],
+        rounds: [],
+        currentRound: 0,
+        isGameStarted: false,
+        submitting: new Set(),
+        timer: 60,
+      };
+      io.emit('gameReset');
+    }
   });
 });
 
