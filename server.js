@@ -11,7 +11,8 @@ let gameState = {
   rounds: [],
   currentRound: 0,
   isGameStarted: false,
-  submitting: new Set(), // Set to track players who have submitted
+  submitting: new Set(),
+  timer: 60, // Timer in seconds
 };
 
 app.use(express.static('public'));  // Serve frontend assets
@@ -27,11 +28,7 @@ io.on('connection', (socket) => {
   socket.on('joinGame', (playerName) => {
     const player = { id: socket.id, name: playerName };
     gameState.players.push(player);
-
-    // Broadcast the updated player list
     io.emit('playerListUpdate', gameState.players);
-
-    // Assign host to the first player who joins
     if (gameState.players.length === 1) {
       socket.emit('youAreHost');
     }
@@ -44,12 +41,16 @@ io.on('connection', (socket) => {
       gameState.currentRound = 0;
       io.emit('gameStart', gameState);
 
-      // Set a timer for 60 seconds
-      setTimeout(() => {
-        if (gameState.submitting.size !== gameState.players.length) {
+      // Start a countdown timer
+      const countdown = setInterval(() => {
+        gameState.timer--;
+        io.emit('updateTimer', gameState.timer);
+
+        if (gameState.timer <= 0) {
+          clearInterval(countdown);
           io.emit('roundTimeout', gameState);
         }
-      }, 60000); // 60 seconds
+      }, 1000); // Every second
     } else {
       socket.emit('error', 'You need at least 3 players to start the game.');
     }
@@ -58,7 +59,6 @@ io.on('connection', (socket) => {
   // Handle drawing submission
   socket.on('sendDrawing', (input) => {
     gameState.submitting.add(socket.id);
-
     if (gameState.submitting.size === gameState.players.length) {
       io.emit('allSubmitted', gameState);
     }
