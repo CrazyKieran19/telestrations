@@ -20,6 +20,19 @@ button {
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
+  color: white;
+  border: none;
+  border-radius: 5px;
+}
+
+#start-button.enabled {
+  background-color: blue;  /* Blue color when players >= 3 */
+  cursor: pointer;
+}
+
+#start-button.disabled {
+  background-color: gray;
+  cursor: not-allowed;
 }
 
 #player-list {
@@ -63,13 +76,8 @@ canvas {
 
 #player-list {
   margin-top: 10px;
-}
-
-#start-button.blue {
-  background-color: blue;  /* Blue color when players >= 3 */
-}
-
-#submit-drawing.disabled {
-  background-color: gray;
-  cursor: not-allowed;
+  font-size: 16px;
+  font-weight: bold;
+  text-align: left;
+  display: inline-block;
 }
