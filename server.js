@@ -1,91 +1,46 @@
-const express = require('express');
-const socketIo = require('socket.io');
-const http = require('http');
+const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server);
+const io = new Server(server);
 
-let gameState = {
-  players: [],
-  rounds: [],
-  currentRound: 0,
-  isGameStarted: false,
-  submitting: new Set(),
-  timer: 60, // Timer in seconds
-};
+app.use(express.static("public"));
 
-app.use(express.static('public'));  // Serve frontend assets
+let players = [];
+let chain = [];
+let currentTurn = 0;
 
-app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/public/index.html');
-});
+io.on("connection", (socket) => {
+  console.log("A user connected:", socket.id);
+  players.push(socket.id);
 
-io.on('connection', (socket) => {
-  console.log('A user connected:', socket.id);
+  socket.emit("playerId", socket.id);
 
-  // Handle player joining
-  socket.on('joinGame', (playerName) => {
-    const player = { id: socket.id, name: playerName };
-    gameState.players.push(player);
-    io.emit('playerListUpdate', gameState.players);
-    if (gameState.players.length === 1) {
-      socket.emit('youAreHost');
-    }
+  if (players.length === 1) {
+    socket.emit("role", "draw");
+  } else {
+    socket.emit("role", "guess");
+  }
+
+  socket.on("submitDrawing", (dataUrl) => {
+    chain.push({ type: "drawing", content: dataUrl });
+    currentTurn++;
+    io.emit("nextTurn", { role: "guess", data: dataUrl });
   });
 
-  // Handle start game
-  socket.on('startGame', () => {
-    if (gameState.players.length >= 3) {
-      gameState.isGameStarted = true;
-      gameState.currentRound = 0;
-      io.emit('gameStart', gameState);
-
-      // Start a countdown timer
-      const countdown = setInterval(() => {
-        gameState.timer--;
-        io.emit('updateTimer', gameState.timer);
-
-        if (gameState.timer <= 0 || gameState.submitting.size === gameState.players.length) {
-          clearInterval(countdown);
-          io.emit('roundTimeout', gameState);
-        }
-      }, 1000); // Every second
-    } else {
-      socket.emit('error', 'You need at least 3 players to start the game.');
-    }
+  socket.on("submitGuess", (text) => {
+    chain.push({ type: "guess", content: text });
+    currentTurn++;
+    io.emit("nextTurn", { role: "draw", data: text });
   });
 
-  // Handle drawing submission
-  socket.on('sendDrawing', () => {
-    gameState.submitting.add(socket.id);
-    if (gameState.submitting.size === gameState.players.length) {
-      io.emit('allSubmitted', gameState);
-    }
-  });
-
-  // Handle player disconnect
-  socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
-    gameState.players = gameState.players.filter(player => player.id !== socket.id);
-    io.emit('playerListUpdate', gameState.players);
-
-    // Reset game state if no players left
-    if (gameState.players.length === 0) {
-      clearInterval(gameState.timer);
-      gameState = {
-        players: [],
-        rounds: [],
-        currentRound: 0,
-        isGameStarted: false,
-        submitting: new Set(),
-        timer: 60,
-      };
-      io.emit('gameReset');
-    }
+  socket.on("disconnect", () => {
+    console.log("User disconnected:", socket.id);
+    players = players.filter((id) => id !== socket.id);
   });
 });
 
-server.listen(process.env.PORT || 3000, () => {
-  console.log('Server is running');
-});
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
